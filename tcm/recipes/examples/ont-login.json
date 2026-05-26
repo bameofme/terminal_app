@@ -1,0 +1,28 @@
+{
+  "name": "ont-login",
+  "description": "Login vào ONT broadband device",
+  "steps": [
+    {
+      "expect": "(?i)login",
+      "send": "{username}\n",
+      "timeout_ms": 10000,
+      "on_timeout": "abort"
+    },
+    {
+      "expect": "(?i)password",
+      "send": "{password}\n",
+      "timeout_ms": 5000,
+      "on_timeout": "abort"
+    },
+    {
+      "expect": "[#$>]",
+      "send": "show version\n",
+      "timeout_ms": 3000,
+      "on_timeout": "skip"
+    }
+  ],
+  "variables": {
+    "username": "admin",
+    "password": ""
+  }
+}

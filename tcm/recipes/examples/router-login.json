@@ -1,0 +1,19 @@
+{
+  "name": "router-login",
+  "description": "SSH login vào router và show interface",
+  "steps": [
+    {
+      "expect": "[$#>]",
+      "send": "show ip interface brief\n",
+      "timeout_ms": 5000,
+      "on_timeout": "abort"
+    },
+    {
+      "expect": "[$#>]",
+      "send": "show version\n",
+      "timeout_ms": 3000,
+      "on_timeout": "skip"
+    }
+  ],
+  "variables": {}
+}

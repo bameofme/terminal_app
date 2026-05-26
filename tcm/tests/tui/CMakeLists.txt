@@ -1,0 +1,17 @@
+tcm_add_test(test_tui test_tui_placeholder.cpp)
+target_link_libraries(test_tui PRIVATE tcm_tui)
+
+tcm_add_test(test_renderer RendererTest.cpp)
+target_link_libraries(test_renderer PRIVATE tcm_tui)
+
+tcm_add_test(test_session_list_view SessionListViewTest.cpp)
+target_link_libraries(test_session_list_view PRIVATE tcm_tui)
+
+tcm_add_test(test_switcher_overlay SwitcherOverlayTest.cpp)
+target_link_libraries(test_switcher_overlay PRIVATE tcm_tui)
+
+tcm_add_test(test_key_handler KeyHandlerTest.cpp)
+target_link_libraries(test_key_handler PRIVATE tcm_tui)
+
+tcm_add_test(test_session_form SessionFormTest.cpp)
+target_link_libraries(test_session_form PRIVATE tcm_tui tcm_protocol)

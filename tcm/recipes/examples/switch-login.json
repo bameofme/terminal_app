@@ -1,0 +1,28 @@
+{
+  "name": "switch-login",
+  "description": "Login vào managed switch via Telnet",
+  "steps": [
+    {
+      "expect": "(?i)username",
+      "send": "{username}\n",
+      "timeout_ms": 10000,
+      "on_timeout": "abort"
+    },
+    {
+      "expect": "(?i)password",
+      "send": "{password}\n",
+      "timeout_ms": 5000,
+      "on_timeout": "abort"
+    },
+    {
+      "expect": "#",
+      "send": "terminal length 0\n",
+      "timeout_ms": 3000,
+      "on_timeout": "skip"
+    }
+  ],
+  "variables": {
+    "username": "admin",
+    "password": ""
+  }
+}

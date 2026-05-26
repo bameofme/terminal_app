@@ -1,0 +1,2 @@
+tcm_add_test(test_credential_store CredentialStoreTest.cpp)
+target_link_libraries(test_credential_store PRIVATE tcm_credential)

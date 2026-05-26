@@ -1,0 +1,196 @@
+.\" Man page for TCM — Terminal Connection Manager
+.\" Generated for TCM version 1.0.0
+.TH TCM 1 "May 2026" "TCM 1.0.0" "User Commands"
+
+.SH NAME
+tcm \- Terminal Connection Manager — TUI multiplexer for SSH, Telnet, and Serial sessions
+
+.SH SYNOPSIS
+.B tcm
+[\fIOPTION\fR]...
+
+.SH DESCRIPTION
+.B tcm
+is a terminal-based connection manager for network engineers and system administrators.
+It provides a unified TUI interface to manage multiple concurrent SSH, Telnet, and
+Serial (RS-232) connections, with support for macro automation via JSON recipe files,
+session logging in Asciicast v2 format, and encrypted credential storage.
+
+Sessions are persisted across restarts in
+.IR ~/.config/tcm/sessions.json .
+The session list is displayed on launch; use the keyboard shortcuts below to navigate,
+connect, and manage sessions.
+
+.SH OPTIONS
+.TP
+.B \-\-version
+Print the version string and exit.
+.TP
+.B \-\-help
+Print a short usage summary and exit.
+.TP
+.B \-\-config \fIPATH\fR
+Load sessions from \fIPATH\fR instead of the default
+.IR ~/.config/tcm/sessions.json .
+.TP
+.B \-\-log\-dir \fIDIR\fR
+Write Asciicast log files to \fIDIR\fR instead of the default
+.IR ~/.local/share/tcm/logs/ .
+
+.SH KEY BINDINGS
+
+.SS Session List
+.TP
+.BR j ", " \[da]
+Move selection down.
+.TP
+.BR k ", " \[ua]
+Move selection up.
+.TP
+.BR Enter ", " c
+Connect to the selected session.
+.TP
+.B n
+Open the New Session form.
+.TP
+.B e
+Edit the selected session.
+.TP
+.B d
+Delete the selected session (with confirmation).
+.TP
+.B m
+Open the recipe picker and run a macro against the selected session.
+.TP
+.B q
+Quit TCM.
+
+.SS Connected Session (prefix: Ctrl-b)
+.TP
+.B Ctrl-b
+Open the session switcher overlay.
+.TP
+.B Ctrl-b d
+Detach from the current session and return to the session list.
+.TP
+.B Ctrl-b n
+Switch to the next session.
+.TP
+.B Ctrl-b p
+Switch to the previous session.
+.TP
+.B Ctrl-b q
+Quit TCM.
+
+.SS Switcher Overlay
+.TP
+.BR j ", " \[da]
+Move selection down.
+.TP
+.BR k ", " \[ua]
+Move selection up.
+.TP
+.B Enter
+Switch to the selected session.
+.TP
+.BR Esc ", " q
+Close the overlay without switching.
+
+.SH FILES
+.TP
+.I ~/.config/tcm/sessions.json
+Session database. Contains an array of session objects in JSON format.
+.TP
+.I ~/.config/tcm/recipes/
+Directory for recipe (macro) JSON files. See
+.BR tcm-recipe (5)
+or
+.I docs/recipe-format.md
+for the recipe format specification.
+.TP
+.I ~/.local/share/tcm/logs/
+Asciicast v2 session logs. Each log is named
+.IR <session-name>-<timestamp>.cast .
+
+.SH EXAMPLES
+.TP
+Launch TCM:
+.B tcm
+
+.TP
+Launch with a custom session file:
+.B tcm --config /etc/tcm/lab-sessions.json
+
+.TP
+Launch with logs written to a custom directory:
+.B tcm --log-dir /var/log/tcm
+
+.SH SESSION JSON FORMAT
+A session object in
+.I sessions.json
+has the following shape (protocol-specific fields vary):
+
+.EX
+  {
+    "name":        "prod-router",
+    "protocol":    "ssh",
+    "host":        "10.0.0.1",
+    "port":        22,
+    "username":    "admin",
+    "auth_method": "password"
+  }
+.EE
+
+Supported values for
+.B protocol
+are
+.BR ssh ,
+.BR telnet ,
+and
+.BR serial .
+
+For serial sessions, use
+.BR device ,
+.BR baud_rate ,
+.BR data_bits ,
+.BR parity ,
+and
+.B stop_bits
+instead of
+.B host
+and
+.BR port .
+
+.SH BUILDING FROM SOURCE
+.EX
+  git clone <repo-url>
+  cd tcm
+  ./scripts/build.sh --release
+  ./scripts/install.sh
+.EE
+
+Pass
+.B --asan
+to enable AddressSanitizer during development.
+Pass
+.B --static
+to link
+.I libgcc
+and
+.I libstdc++
+statically into the binary.
+
+.SH SEE ALSO
+.BR ssh (1),
+.BR telnet (1),
+.BR screen (1),
+.BR tmux (1),
+.BR asciinema (1)
+
+Full documentation: \fIdocs/recipe-format.md\fR
+
+.SH BUGS
+Report bugs via the project issue tracker.
+
+.SH AUTHOR
+TCM contributors.
