@@ -171,6 +171,12 @@ void Application::wireEvents() {
             }
             updateSessionInfos();
         }));
+
+    // User detached → return to session list, keep session connected
+    m_tokens.push_back(m_bus->subscribe<SessionDetachedEvent>(
+        [this](const SessionDetachedEvent&) {
+            m_viewState = ViewState::SessionList;
+        }));
 }
 
 // ---------------------------------------------------------------------------

@@ -26,6 +26,7 @@ struct MacroDoneEvent           { std::string sessionId; bool success = true; };
 struct MacroFailedEvent         { std::string sessionId; std::string reason; };
 struct SessionConnectedEvent    { std::string sessionId; };
 struct SessionDisconnectedEvent { std::string sessionId; };
+struct SessionDetachedEvent     {};   // user detached from active session → back to session list
 
 // ---------------------------------------------------------------------------
 // EventBus — thread-safe publish/subscribe (header-only, template)

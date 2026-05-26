@@ -158,21 +158,18 @@ While connected, press `m` and select a recipe from `~/.config/tcm/recipes/`.
 
 | Key | Action |
 |-----|--------|
-| `Ctrl-b` | Open session switcher overlay |
-| `Ctrl-b d` | Detach / return to session list |
-| `Ctrl-b n` | Next session |
-| `Ctrl-b p` | Previous session |
-| `Ctrl-b q` | Quit TCM |
+| `Ctrl-]` | Open session switcher overlay |
+| `Ctrl-]` then `d` | Detach — return to session list (session stays connected) |
+| `Ctrl-]` then `1-9` | Switch to connected session by number |
+| `Ctrl-]` then `Esc` | Close overlay, stay in current session |
 
 ### Switcher Overlay
 
 | Key | Action |
 |-----|--------|
-| `j` / `↓` | Move down |
-| `k` / `↑` | Move up |
-| `Enter` | Switch to selected session |
-| `Esc` / `q` | Close overlay |
-
+| `1`-`9` | Switch to session by number |
+| `d` | Detach — go back to session list |
+| `Esc` | Close overlay, stay in current session |
 ---
 
 ## Session Configuration
@@ -469,21 +466,18 @@ While connected, press `m` and select a recipe from `~/.config/tcm/recipes/`.
 
 | Key | Action |
 |-----|--------|
-| `Ctrl-b` | Open session switcher overlay |
-| `Ctrl-b d` | Detach / return to session list |
-| `Ctrl-b n` | Next session |
-| `Ctrl-b p` | Previous session |
-| `Ctrl-b q` | Quit TCM |
+| `Ctrl-]` | Open session switcher overlay |
+| `Ctrl-]` then `d` | Detach — return to session list (session stays connected) |
+| `Ctrl-]` then `1-9` | Switch to connected session by number |
+| `Ctrl-]` then `Esc` | Close overlay, stay in current session |
 
 ### Switcher Overlay
 
 | Key | Action |
 |-----|--------|
-| `j` / `↓` | Move down |
-| `k` / `↑` | Move up |
-| `Enter` | Switch to selected session |
-| `Esc` / `q` | Close overlay |
-
+| `1`-`9` | Switch to session by number |
+| `d` | Detach — go back to session list |
+| `Esc` | Close overlay, stay in current session |
 ---
 
 ## Session Configuration

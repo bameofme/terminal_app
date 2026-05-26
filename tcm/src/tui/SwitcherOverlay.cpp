@@ -65,16 +65,23 @@ void SwitcherOverlay::render(Renderer& renderer) {
     }
 
     // Footer
-    renderer.drawText(x + 2, y + popupH - 2, "1-9: switch  Esc: cancel",
+    renderer.drawText(x + 2, y + popupH - 2, "1-9: switch  d: detach  Esc: cancel",
                       ColorPair::StatusBar);
 }
 
 bool SwitcherOverlay::handleKey(int key) {
     if (!m_visible) return false;
 
-    // ESC
+    // ESC — close overlay, stay in session
     if (key == 27) {
         hide();
+        return true;
+    }
+
+    // 'd' — detach: go back to session list, keep session connected
+    if (key == 'd' || key == 'D') {
+        hide();
+        m_bus.publish(SessionDetachedEvent{});
         return true;
     }
 
