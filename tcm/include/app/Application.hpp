@@ -1,7 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
+#include <termios.h>
 #include <vector>
 
 #include "core/EventBus.hpp"
@@ -44,6 +46,11 @@ private:
     AppConfig m_config;
     bool m_running = false;
     std::string m_statusMsg;   // shown in status bar
+
+    // InSession raw-terminal state
+    std::atomic<bool> m_rawMode{false};
+    struct termios    m_savedTermios{};
+    bool              m_termiosSaved = false;
     // Core modules
     std::unique_ptr<EventBus>       m_bus;
     std::unique_ptr<SessionManager> m_sessionManager;
@@ -91,6 +98,10 @@ private:
 
     // Key dispatch
     void handleKey(int key);
+
+    // Raw terminal passthrough helpers (InSession mode)
+    void enterRawMode();
+    void leaveRawMode();
 
     // Active view state
     enum class ViewState { SessionList, InSession, AddForm };

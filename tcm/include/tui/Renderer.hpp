@@ -48,6 +48,13 @@ public:
     // Clear screen
     void clear();
 
+    // Suspend ncurses to allow raw terminal passthrough (InSession mode).
+    // Saves terminal state then calls endwin().
+    void suspend();
+
+    // Resume ncurses after suspend(); restores terminal state.
+    void resume();
+
     // Get a key press (non-blocking). Returns -1 if no key.
     int getKey();
 

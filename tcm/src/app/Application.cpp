@@ -3,12 +3,14 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sys/wait.h>
 #include <thread>
 #include <chrono>
+#include <unistd.h>
 
 #include <nlohmann/json.hpp>
 
@@ -130,11 +132,15 @@ void Application::wireEvents() {
             }
         }));
 
-    // Data received → log output
+    // Data received → log output + display in InSession mode
     m_tokens.push_back(m_bus->subscribe<DataReceivedEvent>(
         [this](const DataReceivedEvent& ev) {
             if (!ev.isInput && m_logger->isLogging()) {
                 m_logger->logOutput(ev.data);
+            }
+            // Write to terminal when in raw passthrough mode
+            if (!ev.isInput && m_rawMode.load()) {
+                if (::write(STDOUT_FILENO, ev.data.data(), ev.data.size()) < 0) { /* ignore */ }
             }
         }));
 
@@ -168,10 +174,85 @@ void Application::wireEvents() {
 }
 
 // ---------------------------------------------------------------------------
-// run() - main event loop
+// enterRawMode() / leaveRawMode() - InSession terminal passthrough
+// ---------------------------------------------------------------------------
+void Application::enterRawMode() {
+    if (m_rawMode.load()) return;
+    m_renderer->suspend();          // def_prog_mode() + endwin()
+
+    // Set stdin to raw/non-blocking for direct I/O
+    struct termios raw;
+    if (tcgetattr(STDIN_FILENO, &raw) == 0) {
+        if (!m_termiosSaved) {
+            m_savedTermios = raw;
+            m_termiosSaved = true;
+        }
+        cfmakeraw(&raw);
+        raw.c_cc[VMIN]  = 0;   // non-blocking
+        raw.c_cc[VTIME] = 0;
+        tcsetattr(STDIN_FILENO, TCSANOW, &raw);
+    }
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    if (flags >= 0) fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    m_rawMode.store(true);
+}
+
+void Application::leaveRawMode() {
+    if (!m_rawMode.load()) return;
+    m_rawMode.store(false);
+
+    // Restore stdin to blocking mode
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    if (flags >= 0) fcntl(STDIN_FILENO, F_SETFL, flags & ~O_NONBLOCK);
+
+    // Restore original terminal settings
+    if (m_termiosSaved) {
+        tcsetattr(STDIN_FILENO, TCSANOW, &m_savedTermios);
+    }
+    m_renderer->resume();           // reset_prog_mode() + refresh()
+}
+
 // ---------------------------------------------------------------------------
 void Application::run() {
     while (m_running) {
+        // Sync raw mode: exit raw mode if we're no longer InSession
+        if (m_rawMode.load() && m_viewState != ViewState::InSession) {
+            leaveRawMode();
+        }
+
+        if (m_viewState == ViewState::InSession &&
+                !m_switcherOverlay->isVisible()) {
+            // Auto-enter raw mode for terminal passthrough
+            if (!m_rawMode.load()) {
+                enterRawMode();
+            }
+
+            // Read stdin directly and forward to active connection
+            uint8_t buf[256];
+            ssize_t n = ::read(STDIN_FILENO, buf, sizeof(buf));
+            if (n > 0) {
+                // Ctrl+] (0x1D) — show switcher
+                bool gotSwitch = false;
+                for (ssize_t i = 0; i < n; i++) {
+                    if (buf[i] == 0x1D) { gotSwitch = true; break; }
+                }
+                if (gotSwitch) {
+                    leaveRawMode();
+                    m_switcherOverlay->show();
+                } else {
+                    Session* active = m_sessionManager->getActive();
+                    if (active && active->conn &&
+                        active->conn->getState() == ConnectionState::Connected) {
+                        active->conn->send(
+                            std::span<const uint8_t>(buf, static_cast<size_t>(n)));
+                    }
+                }
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            continue;
+        }
+
+        // Normal ncurses rendering path
         m_renderer->clear();
 
         switch (m_viewState) {
@@ -184,8 +265,8 @@ void Application::run() {
                 break;
 
             case ViewState::InSession:
-                // Terminal passthrough mode — show status bar only
-                m_renderer->drawTitleBar("TCM — Press Ctrl+] to switch sessions");
+                // Switcher overlay visible: draw background title bar
+                m_renderer->drawTitleBar("TCM \xe2\x80\x94 Press Ctrl+] to switch sessions");
                 break;
 
             case ViewState::AddForm:
@@ -209,6 +290,9 @@ void Application::run() {
         // ~60 fps
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
+
+    // Ensure terminal is restored on exit
+    if (m_rawMode.load()) leaveRawMode();
 }
 
 // ---------------------------------------------------------------------------
@@ -250,17 +334,11 @@ void Application::handleKey(int key) {
             break;
 
         case ViewState::InSession: {
-            // Ctrl+] (0x1D) — show switcher
+            // Keys in InSession are handled in the run() raw path.
+            // This branch only executes while ncurses is active (e.g. overlay
+            // just closed and we haven't re-entered raw mode yet).
             if (key == 0x1D) {
                 m_switcherOverlay->show();
-                return;
-            }
-            // Forward raw key to active session
-            Session* active = m_sessionManager->getActive();
-            if (active && active->conn &&
-                active->conn->getState() == ConnectionState::Connected) {
-                uint8_t ch = static_cast<uint8_t>(key & 0xFF);
-                active->conn->send(std::span<const uint8_t>(&ch, 1));
             }
             break;
         }

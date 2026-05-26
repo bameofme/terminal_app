@@ -51,6 +51,18 @@ void Renderer::teardown() {
     m_initialized = false;
 }
 
+void Renderer::suspend() {
+    if (!m_initialized) return;
+    def_prog_mode(); // save current ncurses terminal settings
+    endwin();        // restore pre-ncurses terminal state
+}
+
+void Renderer::resume() {
+    if (!m_initialized) return;
+    reset_prog_mode(); // restore saved ncurses terminal settings
+    ::refresh();       // repaint screen
+}
+
 bool Renderer::isInitialized() const {
     return m_initialized;
 }
