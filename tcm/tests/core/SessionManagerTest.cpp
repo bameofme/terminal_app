@@ -163,3 +163,20 @@ TEST_F(SessionManagerTest, FindByIdReturnsCorrectSession) {
     ASSERT_NE(found, nullptr);
     EXPECT_EQ(found->name, "S2");
 }
+
+// ---------------------------------------------------------------------------
+// Regression: Bug 3 — setActive() must NOT publish SessionSwitchedEvent.
+// Publishing from setActive() caused infinite recursion (segfault) because
+// the event handler called setActive() again.
+// ---------------------------------------------------------------------------
+TEST_F(SessionManagerTest, SetActiveDoesNotPublishSessionSwitchedEvent) {
+    int eventCount = 0;
+    auto tok = bus.subscribe<SessionSwitchedEvent>(
+        [&eventCount](const SessionSwitchedEvent&) { ++eventCount; });
+
+    const std::string id = mgr.add(makeSession("S1"));
+    mgr.setActive(id); // must NOT publish SessionSwitchedEvent
+
+    EXPECT_EQ(0, eventCount);
+    bus.unsubscribe(tok);
+}

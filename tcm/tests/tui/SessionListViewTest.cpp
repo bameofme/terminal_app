@@ -195,3 +195,39 @@ TEST_F(SessionListViewTest, HandleKeySlashEntersSearchMode) {
     EXPECT_TRUE(view.handleKey('/'));
     EXPECT_TRUE(view.isSearchMode());
 }
+
+// ---------------------------------------------------------------------------
+// Regression: Bug 1 — SessionListView must NOT consume 'a', 'd', 'q'
+// so that Application can handle them (add session, delete, quit).
+// ---------------------------------------------------------------------------
+TEST_F(SessionListViewTest, HandleKeyA_NotConsumed) {
+    SessionListView view(sessions, bus);
+    // 'a' must return false so Application can open the add-session form
+    EXPECT_FALSE(view.handleKey('a'));
+    EXPECT_FALSE(view.handleKey('A'));
+}
+
+TEST_F(SessionListViewTest, HandleKeyD_NotConsumed) {
+    sessions.push_back(make("1", "s1", "h1", "SSH"));
+    SessionListView view(sessions, bus);
+    // 'd' must return false so Application can delete the selected session
+    EXPECT_FALSE(view.handleKey('d'));
+    EXPECT_FALSE(view.handleKey('D'));
+}
+
+TEST_F(SessionListViewTest, HandleKeyQ_NotConsumed) {
+    SessionListView view(sessions, bus);
+    // 'q' must return false so Application can quit
+    EXPECT_FALSE(view.handleKey('q'));
+    EXPECT_FALSE(view.handleKey('Q'));
+}
+
+TEST_F(SessionListViewTest, HandleKeyEnter_NotConsumed) {
+    sessions.push_back(make("1", "s1", "h1", "SSH"));
+    SessionListView view(sessions, bus);
+    // Enter (LF=10, CR=13, KEY_ENTER=343) must return false so Application
+    // can initiate the connection
+    EXPECT_FALSE(view.handleKey(10));  // LF
+    EXPECT_FALSE(view.handleKey(13));  // CR
+    EXPECT_FALSE(view.handleKey(343)); // KEY_ENTER (numpad)
+}

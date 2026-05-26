@@ -236,3 +236,54 @@ TEST_F(SessionFormTest, HandleKeyUpMovesToPrevField) {
     ASSERT_TRUE(cfg.ssh.has_value());
     EXPECT_EQ("h", cfg.ssh->host);
 }
+
+// ---------------------------------------------------------------------------
+// Regression: Bug 2 — Form must confirm on CR (key=13) in addition to LF (10)
+// ---------------------------------------------------------------------------
+static void fillValidSshForm(SessionForm& form) {
+    // Field 0: Name
+    for (char c : std::string("myhost")) form.handleKey(c);
+    form.handleKey(KEY_DOWN); form.handleKey(KEY_DOWN); // → Host (field 2)
+    for (char c : std::string("10.0.0.1")) form.handleKey(c);
+    form.handleKey(KEY_DOWN); form.handleKey(KEY_DOWN); // → Username (field 4)
+    for (char c : std::string("admin")) form.handleKey(c);
+}
+
+TEST_F(SessionFormTest, HandleKeyEnterLF_ConfirmsValidForm) {
+    SessionForm form(bus);
+    fillValidSshForm(form);
+    ASSERT_TRUE(form.isValid());
+    form.handleKey(10); // LF
+    EXPECT_EQ(FormResult::Confirmed, form.getResult());
+}
+
+TEST_F(SessionFormTest, HandleKeyEnterCR_ConfirmsValidForm) {
+    SessionForm form(bus);
+    fillValidSshForm(form);
+    ASSERT_TRUE(form.isValid());
+    form.handleKey(13); // CR — must also confirm
+    EXPECT_EQ(FormResult::Confirmed, form.getResult());
+}
+
+TEST_F(SessionFormTest, HandleKeyEnter_WhenInvalidSetsErrorMessage) {
+    SessionForm form(bus);
+    // Name is empty → form is invalid
+    ASSERT_FALSE(form.isValid());
+    form.handleKey(10); // Enter on invalid form
+    // Result must NOT be Confirmed
+    EXPECT_NE(FormResult::Confirmed, form.getResult());
+    // A validation error message must be available
+    EXPECT_FALSE(form.getValidationError().empty());
+}
+
+TEST_F(SessionFormTest, ResetClearsFormResult) {
+    SessionForm form(bus);
+    // Confirm a valid form so result becomes Confirmed
+    fillValidSshForm(form);
+    form.handleKey(10);
+    ASSERT_EQ(FormResult::Confirmed, form.getResult());
+
+    // reset() must bring result back to None
+    form.reset();
+    EXPECT_EQ(FormResult::None, form.getResult());
+}
